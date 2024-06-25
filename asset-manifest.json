@@ -1,0 +1,15 @@
+{
+  "files": {
+    "main.css": "/ai-for-design/static/css/main.3cb80d15.css",
+    "main.js": "/ai-for-design/static/js/main.b5370bf2.js",
+    "static/js/453.5caa4eec.chunk.js": "/ai-for-design/static/js/453.5caa4eec.chunk.js",
+    "index.html": "/ai-for-design/index.html",
+    "main.3cb80d15.css.map": "/ai-for-design/static/css/main.3cb80d15.css.map",
+    "main.b5370bf2.js.map": "/ai-for-design/static/js/main.b5370bf2.js.map",
+    "453.5caa4eec.chunk.js.map": "/ai-for-design/static/js/453.5caa4eec.chunk.js.map"
+  },
+  "entrypoints": [
+    "static/css/main.3cb80d15.css",
+    "static/js/main.b5370bf2.js"
+  ]
+}
