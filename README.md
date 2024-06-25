@@ -1,3 +1,5 @@
+https://oetboston.github.io/ai-for-design
+
 In the project directory, you can run:
 
 ### `npm start`
