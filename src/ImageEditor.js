@@ -2,9 +2,9 @@ import React, { useState, useEffect } from 'react';
 import Dropdown from './Dropdown';
 
 const defaultOptions = {
-  word1: ['simple wood flooring', 'tile flooring', 'carpet'],
-  word2: ['faint light', 'bright light', 'dim light'],
-  word3: ['warm yellow tones', 'cool blue tones', 'neutral tones'],
+  word1: ['simple', 'tile', 'carpet'],
+  word2: ['faint', 'bright', 'dim'],
+  word3: ['warm', 'cool', 'neutral'],
 };
 
 const chooseKeywords = (sentence) => {
@@ -33,23 +33,22 @@ function ImageEditor() {
     const newKeywords = chooseKeywords(sentence);
     setKeywords(newKeywords);
     
-    // Update options to include the original words
     setOptions({
       word1: [newKeywords.word1, ...defaultOptions.word1].filter((v, i, a) => a.indexOf(v) === i),
       word2: [newKeywords.word2, ...defaultOptions.word2].filter((v, i, a) => a.indexOf(v) === i),
       word3: [newKeywords.word3, ...defaultOptions.word3].filter((v, i, a) => a.indexOf(v) === i),
     });
-  }, [sentence]);
+  }, [sentence]);                         
 
   const handleChangeWord = (name, value) => {
     setKeywords(prev => ({ ...prev, [name]: value }));
     
-    // Update the sentence when a dropdown word changes
-    const words = sentence.split(' ');
-    if (name === 'word1' && words.length > 0) words[0] = value;
-    if (name === 'word2' && words.length > 1) words[1] = value;
-    if (name === 'word3' && words.length > 2) words[2] = value;
-    setSentence(words.join(' '));
+    const words = sentence.split(/\s+/);
+    const index = words.findIndex(word => word === keywords[name]);
+    if (index !== -1) {
+      words[index] = value;
+      setSentence(words.join(' '));
+    }
   };
 
   // const axios = require('axios');
@@ -109,14 +108,15 @@ function ImageEditor() {
           onChange={(e) => setSentence(e.target.value)}
         />
         <p>
-          {sentence.split(' ').map((word, index) => (
-            <span key={index}>
-              {index === 0 && <Dropdown name="word1" options={options.word1} value={keywords.word1} onChange={handleChangeWord} />}
-              {index === 1 && <Dropdown name="word2" options={options.word2} value={keywords.word2} onChange={handleChangeWord} />}
-              {index === 2 && <Dropdown name="word3" options={options.word3} value={keywords.word3} onChange={handleChangeWord} />}{index > 2 && ` ${word}`}
-              {index < sentence.split(' ').length - 1 && ' '}
-            </span>
-          ))}
+        {sentence.split(/\s+/).map((word, index) => (
+          <span key={index}>
+            {word === keywords.word1 && <Dropdown name="word1" options={options.word1} value={keywords.word1} onChange={handleChangeWord} />}
+            {word === keywords.word2 && <Dropdown name="word2" options={options.word2} value={keywords.word2} onChange={handleChangeWord} />}
+            {word === keywords.word3 && <Dropdown name="word3" options={options.word3} value={keywords.word3} onChange={handleChangeWord} />}
+            {![keywords.word1, keywords.word2, keywords.word3].includes(word) && word}
+            {' '}
+          </span>
+        ))}                                   
         </p>
       </div>
       <button
