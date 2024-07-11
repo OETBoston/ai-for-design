@@ -28,6 +28,7 @@ function ImageEditor() {
   const [keywords, setKeywords] = useState({ word1: '', word2: '', word3: '' });
   const [options, setOptions] = useState(defaultOptions);
   const [generatedImages, setGeneratedImages] = useState([]); 
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     const newKeywords = chooseKeywords(sentence);
@@ -51,52 +52,26 @@ function ImageEditor() {
     }
   };
 
-  // const axios = require('axios');
+  const handleGenerateImages = async () => {
+    setLoading(true);
+    const prompt = `${keywords.word1} ${keywords.word2} ${keywords.word3}`;
+    try {
+      const response = await fetch('http://localhost:5000/generate-images', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ prompt }),
+      });
 
-  const handleGenerateImages = () => {
-    // Replace with actual image generation logic
-    const newImages = ['test.png', 'test.png', 'test.png', 'test.png'];
-    setGeneratedImages(newImages);
+      const data = await response.json();
+      setGeneratedImages(data.images);
+    } catch (error) {
+      console.error('Error generating images:', error);
+    } finally {
+      setLoading(false);
+    }
   };
-  // const handleGenerateImages = async () => {
-  //   const apiKey = 'YOUR_CLOUD_VISION_API_KEY'; // Replace with your actual API key
-  
-  //   const prompt = `${words.word1} ${words.word2} ${words.word3}`;
-  
-  //   try {
-  //     const response = await axios.post(
-  //       'https://vision.googleapis.com/v1/images:annotate',
-  //       {
-  //         requests: [
-  //           {
-  //             image: {
-  //               content: btoa(prompt), // Base64-encode the prompt for the request
-  //             },
-  //             features: [
-  //               {
-  //                 type: 'IMAGE_GENERATION', // Specify image generation feature
-  //                 max_num_images: 4, // Request up to 4 generated images
-  //               },
-  //             ],
-  //           },
-  //         ],
-  //       },
-  //       {
-  //         headers: {
-  //           'Authorization': `Bearer ${apiKey}`,
-  //         },
-  //       }
-  //     );
-  
-  //     const generatedImageUrls = response.data.responses[0].generateImageAnnotation.images.map(
-  //       (image) => image.uri
-  //     );
-  //     setGeneratedImages(generatedImageUrls);
-  //   } catch (error) {
-  //     console.error('Error generating images:', error);
-  //   }
-  // };
-  
 
   return (
     <div className="space-y-4">
@@ -121,14 +96,15 @@ function ImageEditor() {
       </div>
       <button
         onClick={handleGenerateImages}
-        className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
+        className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded mb-4"
+        disabled={loading}
       >
-        Generate Images
+        {loading ? 'Generating...' : 'Generate Images'}
       </button>
-      <div className="grid grid-cols-2 gap-4">
+      <div className="flex justify-center gap-6">
         {generatedImages.map((image, index) => (
-          <div key={index} className="bg-gray-300 rounded h-40 flex items-center justify-center">
-            <img src={image} alt={`Generated Image ${index + 1}`} />
+          <div key={index} className="bg-gray-300 rounded-lg flex items-center justify-center h-64 w-64 overflow-hidden">
+            <img src={image} alt={`Generated Image ${index + 1}`} className="object-cover w-full h-full" />
           </div>
         ))}
       </div>
@@ -137,3 +113,4 @@ function ImageEditor() {
 }
 
 export default ImageEditor;
+
