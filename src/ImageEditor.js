@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import Dropdown from './Dropdown';
 
 const defaultOptions = {
@@ -29,6 +29,17 @@ function ImageEditor() {
   const [options, setOptions] = useState(defaultOptions);
   const [generatedImages, setGeneratedImages] = useState([]); 
   const [loading, setLoading] = useState(false);
+
+  const [selectedImage, setSelectedImage] = useState(null);
+  const [drawing, setDrawing] = useState(false);
+  const [points, setPoints] = useState([]);   
+  const [finalizedDrawing, setFinalizedDrawing] = useState(null);
+  const canvasRef = useRef(null);
+
+  const handleImageClick = (image) => {
+      setSelectedImage(image);
+      setPoints([]);
+  };
 
   useEffect(() => {
     const newKeywords = chooseKeywords(sentence);
@@ -73,6 +84,58 @@ function ImageEditor() {
     }
   };
 
+  const handleCanvasDraw = (e) => {
+    if (!drawing) return;
+  
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    
+    // Adjust coordinates based on canvas size and display size
+    const rect = canvas.getBoundingClientRect();
+    const scaleX = canvas.width / rect.width;
+    const scaleY = canvas.height / rect.height;
+    const x = (e.clientX - rect.left) * scaleX;
+    const y = (e.clientY - rect.top) * scaleY;
+  
+    setPoints((prevPoints) => {
+      const newPoints = [...prevPoints, { x, y }];
+      if (newPoints.length > 1) {
+        const lastPoint = newPoints[newPoints.length - 2];
+        ctx.beginPath();
+        ctx.moveTo(lastPoint.x, lastPoint.y);
+        ctx.lineTo(x, y);
+        ctx.stroke();
+      }
+      return newPoints;
+    });
+  };
+  
+  const handleMouseDown = () => {
+    setDrawing(true);
+  };
+  
+  const handleMouseUp = () => {
+    setDrawing(false);
+  };
+
+  const handleFinalizeDrawing = () => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+  
+    if (points.length > 2) {
+      ctx.beginPath();
+      ctx.moveTo(points[0].x, points[0].y);
+      points.forEach(point => ctx.lineTo(point.x, point.y));
+      ctx.closePath();
+      ctx.stroke();
+    }
+    setPoints([]);
+  };
+  
+  
+
   return (
     <div className="space-y-4">
       <div className="bg-white p-4 rounded shadow">
@@ -101,16 +164,35 @@ function ImageEditor() {
       >
         {loading ? 'Generating...' : 'Generate Images'}
       </button>
+      <button
+        onClick={handleFinalizeDrawing}
+        className="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded mb-4"
+      >
+        Finalize Drawing
+      </button>
       <div className="flex justify-center gap-6">
-        {generatedImages.map((image, index) => (
-          <div key={index} className="bg-gray-300 rounded-lg flex items-center justify-center h-64 w-64 overflow-hidden">
-            <img src={image} alt={`Generated Image ${index + 1}`} className="object-cover w-full h-full" />
-          </div>
-        ))}
+          {generatedImages.length === 0 && <p>No images generated.</p>}
+          {generatedImages.map((image, index) => (
+            <div
+              key={index}
+              className={`bg-gray-300 rounded-lg flex items-center justify-center h-64 w-64 overflow-hidden relative ${selectedImage === image ? 'border-4 border-blue-500' : ''}`}
+              onClick={() => handleImageClick(image)}
+            >
+              <img src={image} alt={`Generated Image ${index + 1}`} className="object-cover w-full h-full" />
+              {selectedImage === image && (
+                  <canvas
+                      ref={canvasRef}
+                      className="absolute top-0 left-0 w-full h-full"
+                      onMouseDown={handleMouseDown}
+                      onMouseUp={handleMouseUp}
+                      onMouseMove={handleCanvasDraw}
+                  />
+              )}
+            </div>
+          ))}
       </div>
     </div>
   );  
 }
 
 export default ImageEditor;
-
