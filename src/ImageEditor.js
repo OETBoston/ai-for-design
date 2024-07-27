@@ -33,7 +33,6 @@ function ImageEditor() {
   const [selectedImage, setSelectedImage] = useState(null);
   const [drawing, setDrawing] = useState(false);
   const [points, setPoints] = useState([]);   
-  const [finalizedDrawing, setFinalizedDrawing] = useState(null);
   const canvasRef = useRef(null);
 
   const handleImageClick = (image) => {
@@ -63,11 +62,36 @@ function ImageEditor() {
     }
   };
 
+  // const handleGenerateImages = async () => {
+  //   setLoading(true);
+  //   const prompt = sentence;
+  //   try {
+  //     const response = await fetch('http://localhost:5000/generate-images', {
+  //       method: 'POST',
+  //       headers: {
+  //         'Content-Type': 'application/json',
+  //       },
+  //       body: JSON.stringify({ prompt, sampleCount: 4}),
+  //     });
+
+  //     const data = await response.json();
+  //     const images = Array.isArray(data.images) ? data.images : [];
+  //     setGeneratedImages(images);
+  //   } catch (error) {
+  //     console.error('Error generating images:', error);
+  //   } finally {
+  //     setLoading(false);
+  //   }
+  // };
+  const useStability = true;
   const handleGenerateImages = async () => {
+    // const imageUrls = ["/generated_image.jpeg"];
+    // setGeneratedImages(imageUrls);
     setLoading(true);
-    const prompt = `${keywords.word1} ${keywords.word2} ${keywords.word3}`;
+    const prompt = sentence;
     try {
-      const response = await fetch('http://localhost:5000/generate-images', {
+      const response = await fetch('http://localhost:5000/generate-images-stability', {
+      // const response = await fetch('http://localhost:5000/generate-images', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -75,8 +99,18 @@ function ImageEditor() {
         body: JSON.stringify({ prompt }),
       });
 
-      const data = await response.json();
-      setGeneratedImages(data.images);
+      if (response.ok) {
+        const data = await response.json();
+        console.log('Response data:', data); // Debugging log
+
+        // Create a URL for the image
+        const imageUrl = `http://localhost:5000${data.images}`;
+        setGeneratedImages([imageUrl]);
+      } else {
+        console.error(`Request failed with status code: ${response.status}`);
+        const errorText = await response.text();
+        console.error(errorText);
+      }
     } catch (error) {
       console.error('Error generating images:', error);
     } finally {
@@ -132,8 +166,7 @@ function ImageEditor() {
       ctx.stroke();
     }
     setPoints([]);
-  };
-  
+  }; 
   
 
   return (
