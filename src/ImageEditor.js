@@ -34,10 +34,11 @@ function ImageEditor() {
   const [drawing, setDrawing] = useState(false);
   const [points, setPoints] = useState([]);   
   const canvasRef = useRef(null);
+  const [imageMask, setImageMask] = useState(null);
 
   const handleImageClick = (image) => {
       setSelectedImage(image);
-      setPoints([]);
+      // setPoints([]);
   };
 
   useEffect(() => {
@@ -83,10 +84,8 @@ function ImageEditor() {
   //     setLoading(false);
   //   }
   // };
-  const useStability = true;
+
   const handleGenerateImages = async () => {
-    // const imageUrls = ["/generated_image.jpeg"];
-    // setGeneratedImages(imageUrls);
     setLoading(true);
     const prompt = sentence;
     try {
@@ -134,6 +133,8 @@ function ImageEditor() {
   
     setPoints((prevPoints) => {
       const newPoints = [...prevPoints, { x, y }];
+      // console.log('New points:', newPoints); // Log the new points array
+      
       if (newPoints.length > 1) {
         const lastPoint = newPoints[newPoints.length - 2];
         ctx.beginPath();
@@ -141,6 +142,7 @@ function ImageEditor() {
         ctx.lineTo(x, y);
         ctx.stroke();
       }
+      console.log("current points", points)
       return newPoints;
     });
   };
@@ -153,20 +155,115 @@ function ImageEditor() {
     setDrawing(false);
   };
 
+  const handleImageEditing = async (imageMask) => {
+    console.log(imageMask)
+    if (typeof imageMask !== 'string') {
+      console.error('Invalid image mask:', imageMask);
+      return; // Exit if imageMask is not valid
+    }
+    try {
+      const response = await fetch('/edit-image', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ sentence, selectedImage, mask: imageMask }),
+      });
+
+      if (!response.ok) {
+        throw new Error(`Request failed with status: ${response.status}`);
+    }
+
+      const data = await response.json();
+      console.log('Response data:', data);
+    } catch (error) { 
+      console.error('Error editing image:', error);
+    }
+  };
+
+  useEffect(() => {
+      console.log('Updated points:', points); // This will log the points whenever they change
+  }, [points]);
+
   const handleFinalizeDrawing = () => {
     const canvas = canvasRef.current;
+    console.log('In function')
     if (!canvas) return;
     const ctx = canvas.getContext('2d');
   
+    console.log('Finalizing drawing with points:', points);
+  
+    // Create a temporary canvas for the binary mask
+    const tempCanvas = document.createElement('canvas');
+    tempCanvas.width = canvas.width;
+    tempCanvas.height = canvas.height;
+    const tempCtx = tempCanvas.getContext('2d');
+  
+    // Draw the path on the temporary canvas
+    tempCtx.fillStyle = 'black';
+    tempCtx.strokeStyle = 'black';
+    tempCtx.lineWidth = 2;
+    tempCtx.beginPath();
     if (points.length > 2) {
-      ctx.beginPath();
-      ctx.moveTo(points[0].x, points[0].y);
-      points.forEach(point => ctx.lineTo(point.x, point.y));
-      ctx.closePath();
-      ctx.stroke();
+      tempCtx.moveTo(points[0].x, points[0].y);
+      points.forEach(point => tempCtx.lineTo(point.x, point.y));
     }
-    setPoints([]);
-  }; 
+    tempCtx.closePath();
+    tempCtx.fill();
+    tempCtx.stroke();
+  
+    // Flood fill the enclosed regions
+    const imageData = tempCtx.getImageData(0, 0, tempCanvas.width, tempCanvas.height);
+    const data = imageData.data;
+  
+    // Simple flood fill algorithm
+    const stack = [];
+    const visited = new Set();
+  
+    const floodFill = (x, y) => {
+      const key = `${x},${y}`;
+      if (visited.has(key)) return;
+      visited.add(key);
+  
+      const index = (y * tempCanvas.width + x) * 4;
+      if (data[index] === 0 && data[index + 1] === 0 && data[index + 2] === 0 && data[index + 3] === 255) {
+        data[index] = data[index + 1] = data[index + 2] = 255;
+        stack.push([x - 1, y], [x + 1, y], [x, y - 1], [x, y + 1]);
+      }
+    };
+  
+    // Start flood fill from the center
+    stack.push([Math.floor(tempCanvas.width / 2), Math.floor(tempCanvas.height / 2)]);
+  
+    while (stack.length > 0) {
+      const [x, y] = stack.pop();
+      if (x >= 0 && x < tempCanvas.width && y >= 0 && y < tempCanvas.height) {
+        floodFill(x, y);
+      }
+    }
+  
+    // Put the modified image data back on the temporary canvas
+    tempCtx.putImageData(imageData, 0, 0);
+  
+    // Convert to binary (black and white only)
+    const binaryImageData = tempCtx.getImageData(0, 0, tempCanvas.width, tempCanvas.height);
+    const binaryData = binaryImageData.data;
+    for (let i = 0; i < binaryData.length; i += 4) {
+      const avg = (binaryData[i] + binaryData[i + 1] + binaryData[i + 2]) / 3;
+      const color = avg > 127 ? 255 : 0;
+      binaryData[i] = binaryData[i + 1] = binaryData[i + 2] = color;
+    }
+    tempCtx.putImageData(binaryImageData, 0, 0);
+  
+    // Save the binary mask as an image
+    const imageMask = tempCanvas.toDataURL('image/png');
+    console.log('Binary mask data URL:', imageMask);
+  
+    setImageMask(imageMask);
+
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ctx.drawImage(tempCanvas, 0, 0);
+  };
   
 
   return (
@@ -203,6 +300,13 @@ function ImageEditor() {
       >
         Finalize Drawing
       </button>
+      <button
+        onClick={() => handleImageEditing(imageMask)}
+        className="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded mb-4"
+        disabled={loading}
+      >
+        {loading ? 'Editing...' : 'Edit Images'}
+      </button>
       <div className="flex justify-center gap-6">
           {generatedImages.length === 0 && <p>No images generated.</p>}
           {generatedImages.map((image, index) => (
@@ -216,9 +320,18 @@ function ImageEditor() {
                   <canvas
                       ref={canvasRef}
                       className="absolute top-0 left-0 w-full h-full"
-                      onMouseDown={handleMouseDown}
-                      onMouseUp={handleMouseUp}
-                      onMouseMove={handleCanvasDraw}
+                      onMouseDown={() => {
+                          // console.log('Mouse down'); // Debugging log
+                          handleMouseDown();
+                      }}
+                      onMouseUp={() => {
+                          // console.log('Mouse up'); // Debugging log
+                          handleMouseUp();
+                      }}
+                      onMouseMove={(e) => {
+                          // console.log('Mouse move'); // Debugging log
+                          handleCanvasDraw(e);
+                      }}
                   />
               )}
             </div>
