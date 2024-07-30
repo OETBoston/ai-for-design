@@ -118,7 +118,7 @@ app.post('/edit-image', async (req, res) => {
   };
 
   try {    
-    const response = await axios.post(
+    const response = await axios.postForm(
       'https://api.stability.ai/v2beta/stable-image/edit/inpaint',
       axios.toFormData(payload, new FormData()),
       {
@@ -127,15 +127,16 @@ app.post('/edit-image', async (req, res) => {
         headers: {
           'Authorization': `Bearer ${process.env.STABILITY_API_KEY}`,
           'Accept': 'image/*',
+          // 'Accept': 'application/json'
         },
       }
     );
 
     if (response.status === 200) {
       const editedImagePath = './edited_image.jpeg';
-      fs.writeFileSync(editedImagePath, response.data);
+      fs.writeFileSync(editedImagePath, Buffer.from(response.data));
       console.log(editedImagePath);
-      res.json({ image: '/edited_image.jpeg' });
+      res.json({ images: '/edited_image.jpeg' });
     } else {
       console.error(`Error editing image: ${response.status}: ${response.data.toString()}`);
       res.status(response.status).json({ error: 'Failed to edit image with Stability API' });

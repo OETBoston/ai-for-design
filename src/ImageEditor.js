@@ -169,15 +169,23 @@ function ImageEditor() {
         },
         body: JSON.stringify({ sentence, selectedImage, mask: imageMask }),
       });
+      console.log(response)
+      if (response.ok) {
+        const data = await response.json();
+        console.log('Response data:', data); // Debugging log
 
-      if (!response.ok) {
-        throw new Error(`Request failed with status: ${response.status}`);
-    }
-
-      const data = await response.json();
-      console.log('Response data:', data);
-    } catch (error) { 
-      console.error('Error editing image:', error);
+        // Create a URL for the image
+        const imageUrl = `http://localhost:5000${data.images}`;
+        setGeneratedImages([imageUrl]);
+      } else {
+        console.error(`Request failed with status code: ${response.status}`);
+        const errorText = await response.text();
+        console.error(errorText);
+      }
+    } catch (error) {
+      console.error('Error generating images:', error);
+    } finally {
+      setLoading(false);
     }
   };
 

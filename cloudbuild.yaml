@@ -1,0 +1,5 @@
+steps:
+- name: 'gcr.io/buildpacks/builder'
+  args: ['--path', 'backend', '--builder', 'packs/nodejs:20']
+- name: 'gcr.io/buildpacks/builder'
+  args: ['--path', '.', '--builder', 'packs/npm:1']
