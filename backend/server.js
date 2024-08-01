@@ -7,7 +7,8 @@ const {VertexAI} = require('@google-cloud/vertexai');
 const fs = require('fs');
 const axios = require('axios');
 const FormData = require('form-data');
-
+const http = require('http');
+const { Readable } = require('stream');
 
 const app = express();
 const port = process.env.PORT || 5000;
@@ -107,16 +108,87 @@ app.post('/generate-images-stability', async (req, res) => {
   }
 });
 
+const dataUrlToBuffer = (dataUrl) => {
+  const base64Data = dataUrl.split(',')[1]; // Get the base64 part
+  return Buffer.from(base64Data, 'base64'); // Convert to buffer
+};
+
 app.post('/edit-image', async (req, res) => {
-  const { prompt, image, mask } = req.body;
+  console.log('Request body:', req.body);
+    
+  const { sentence, selectedImage, mask } = req.body;
+
+  try {
+    const formData = new FormData();
+
+    // Fetch the image and add it to formData
+    const imageStream = await fetchImageAsReadStream(selectedImage);
+    formData.append('image', imageStream, { filename: 'image.jpg', contentType: 'image/jpeg' });
+
+    // Convert base64 mask to stream and add it to formData
+    const maskStream = base64ToReadStream(mask);
+    formData.append('mask', maskStream, { filename: 'mask.png', contentType: 'image/png' });
+
+    // Add other fields
+    formData.append('prompt', sentence);
+    formData.append('output_format', 'jpeg');
+
+    const response = await axios.post(
+      'https://api.stability.ai/v2beta/stable-image/edit/inpaint',
+      formData,
+      {
+        validateStatus: undefined,
+        responseType: 'arraybuffer',
+        headers: {
+          ...formData.getHeaders(),
+          'Authorization': `Bearer ${process.env.STABILITY_API_KEY}`,
+          'Accept': 'image/*',
+        },
+      }
+    );
+
+    if (response.status === 200) {
+      const editedImagePath = './edited_image.jpeg';
+      fs.writeFileSync(editedImagePath, Buffer.from(response.data));
+      console.log(editedImagePath);
+      res.json({ images: '/edited_image.jpeg' });
+    } else {
+      console.error(`Error editing image: ${response.status}: ${response.data.toString()}`);
+      res.status(response.status).json({ error: 'Failed to edit image with Stability API' });
+    }
+  } catch (error) {
+    console.error('Error editing image with Stability API:', error);
+    res.status(500).json({ error: 'Failed to edit image with Stability API' });
+  }
+});
+
+// Helper function to fetch image as ReadStream
+async function fetchImageAsReadStream(imageUrl) {
+  const response = await axios.get(imageUrl, { responseType: 'stream' });
+  return response.data;
+}
+
+// Helper function to convert base64 to ReadStream
+function base64ToReadStream(base64String) {
+  const buffer = Buffer.from(base64String.split(',')[1], 'base64');
+  const stream = new Readable();
+  stream.push(buffer);
+  stream.push(null);
+  return stream;
+}
+
+app.post('/edit-image', async (req, res) => {
+  console.log('Request body:', req.body); // Log the entire request body
+    
+  const { sentence, selectedImage, mask } = req.body;
 
   const payload = {
-    image: fs.createReadStream(image),
-    mask: fs.createReadStream(mask),
-    prompt: prompt,
+    image: fetchImageAsReadStream(selectedImage),
+    mask: base64ToReadStream(mask),
+    prompt: sentence,
     output_format: "jpeg"
   };
-
+  console.log(payload)
   try {    
     const response = await axios.postForm(
       'https://api.stability.ai/v2beta/stable-image/edit/inpaint',
@@ -127,7 +199,6 @@ app.post('/edit-image', async (req, res) => {
         headers: {
           'Authorization': `Bearer ${process.env.STABILITY_API_KEY}`,
           'Accept': 'image/*',
-          // 'Accept': 'application/json'
         },
       }
     );

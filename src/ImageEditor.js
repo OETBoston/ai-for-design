@@ -162,7 +162,7 @@ function ImageEditor() {
       return; // Exit if imageMask is not valid
     }
     try {
-      const response = await fetch('/edit-image', {
+      const response = await fetch('http://localhost:5000/edit-image', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

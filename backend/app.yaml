@@ -1,0 +1,8 @@
+runtime: nodejs22
+env: standard
+
+env_variables:
+  STABILITY_API_KEY: "YOUR_API_KEY_HERE"
+
+# This is the main entry point for your application.
+entrypoint: index.js
