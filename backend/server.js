@@ -218,44 +218,6 @@ app.post('/edit-image', async (req, res) => {
   }
 });
 
-
-
-// app.post('/generate-images-imagen', async (req, res) => {
-//   const { prompt, sampleCount } = req.body;
-
-//   try {
-//     const response = await fetch(`https://${process.env.LOCATION}-aiplatform.googleapis.com/v1/projects/${process.env.PROJECT_ID}/locations/${process.env.LOCATION}/publishers/google/models/${process.env.MODE_VERSION}:predict`, {
-//       method: 'POST',
-//       headers: {
-//         'Authorization': `Bearer ${process.env.GCLOUD_ACCESS_TOKEN}`,
-//         'Content-Type': 'application/json; charset=utf-8',
-//       },
-//       body: JSON.stringify({
-//         instances: [{ prompt }],
-//         parameters: { sampleCount: sampleCount }
-//       })
-//     });
-
-//     if (response.status === 200) {
-//       const result = await response.json();
-//       const generatedImages = result.predictions || [];
-//       const imageUrls = generatedImages.map((imageData, idx) => {
-//         const imgBytes = Buffer.from(imageData.bytesBase64Encoded, 'base64');
-//         return `data:${imageData.mimeType};base64,${imgBytes.toString('base64')}`;
-//       });
-//       res.json({ images: imageUrls });
-//     } else {
-//       console.error(`Request failed with status code: ${response.status}`);
-//       const errorText = await response.text();
-//       console.error(errorText);
-//       res.status(response.status).json({ error: 'Failed to generate images with Imagen' });
-//     }
-//   } catch (error) {
-//     console.error('Error generating images with Imagen:', error);
-//     res.status(500).json({ error: 'Failed to generate images with Imagen' });
-//   }
-// });
-
 app.listen(port, () => {
   console.log(`Server is running on port ${port}`);
 });

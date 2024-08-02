@@ -178,8 +178,6 @@ function ImageEditor() {
         const imageUrl = `http://localhost:5000${data.images}`;
         console.log('Setting generated images:', [imageUrl]);
         setGeneratedImages([imageUrl]);
-        // setImageMask(null);
-        // setPoints([]);
       } else {
         console.error(`Request failed with status code: ${response.status}`);
         const errorText = await response.text();
