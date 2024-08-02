@@ -63,27 +63,27 @@ function ImageEditor() {
     }
   };
 
-  // const handleGenerateImages = async () => {
-  //   setLoading(true);
-  //   const prompt = sentence;
-  //   try {
-  //     const response = await fetch('http://localhost:5000/generate-images', {
-  //       method: 'POST',
-  //       headers: {
-  //         'Content-Type': 'application/json',
-  //       },
-  //       body: JSON.stringify({ prompt, sampleCount: 4}),
-  //     });
+  const handleGenerateImagesDALLE = async () => {
+    setLoading(true);
+    const prompt = sentence;
+    try {
+      const response = await fetch('http://localhost:5000/generate-images', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ prompt, sampleCount: 4}),
+      });
 
-  //     const data = await response.json();
-  //     const images = Array.isArray(data.images) ? data.images : [];
-  //     setGeneratedImages(images);
-  //   } catch (error) {
-  //     console.error('Error generating images:', error);
-  //   } finally {
-  //     setLoading(false);
-  //   }
-  // };
+      const data = await response.json();
+      const images = Array.isArray(data.images) ? data.images : [];
+      setGeneratedImages(images);
+    } catch (error) {
+      console.error('Error generating images:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleGenerateImages = async () => {
     setLoading(true);
@@ -176,7 +176,10 @@ function ImageEditor() {
 
         // Create a URL for the image
         const imageUrl = `http://localhost:5000${data.images}`;
+        console.log('Setting generated images:', [imageUrl]);
         setGeneratedImages([imageUrl]);
+        // setImageMask(null);
+        // setPoints([]);
       } else {
         console.error(`Request failed with status code: ${response.status}`);
         const errorText = await response.text();
@@ -184,6 +187,57 @@ function ImageEditor() {
       }
     } catch (error) {
       console.error('Error generating images:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleImageOperation = async (imageMask = null) => {
+    setLoading(true);
+    const prompt = sentence;
+  
+    try {
+      let endpoint, payload;
+      console.log('imageMask:', imageMask, 'Type:', typeof imageMask);
+      if (imageMask && typeof imageMask === 'string') {
+        console.log("editing image")
+        // Image editing
+        endpoint = 'http://localhost:5000/edit-image';
+        payload = { sentence: prompt, selectedImage, mask: imageMask };
+      } else {
+        // Image generation
+        endpoint = 'http://localhost:5000/generate-images-stability';
+        payload = { prompt };
+      }
+  
+      const response = await fetch(endpoint, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(payload),
+      });
+  
+      if (response.ok) {
+        const data = await response.json();
+        console.log('Response data:', data);
+  
+        // Create a URL for the image
+        const imageUrl = `http://localhost:5000${data.images}?t=${Date.now()}`;
+        setGeneratedImages([imageUrl]);
+  
+        if (imageMask) {
+          // Reset mask-related states
+          setImageMask(null);
+          setPoints([]);
+        }
+      } else {
+        console.error(`Request failed with status code: ${response.status}`);
+        const errorText = await response.text();
+        console.error(errorText);
+      }
+    } catch (error) {
+      console.error('Error processing image:', error);
     } finally {
       setLoading(false);
     }
@@ -295,26 +349,51 @@ function ImageEditor() {
         ))}                                   
         </p>
       </div>
+      <div className="flex space-x-4 mb-6">
       <button
-        onClick={handleGenerateImages}
-        className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded mb-4"
+        onClick={() => handleImageOperation(imageMask)}
+        className={`
+          flex items-center justify-center
+          min-w-[150px] h-12
+          bg-blue-600 hover:bg-blue-700 
+          text-white font-semibold
+          rounded-lg shadow-md
+          transition duration-300 ease-in-out
+          transform hover:scale-105
+          focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50
+          ${loading ? 'opacity-50 cursor-not-allowed' : ''}
+        `}
         disabled={loading}
       >
-        {loading ? 'Generating...' : 'Generate Images'}
+        {loading ? (
+          <>
+            <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+            </svg>
+            Generating...
+          </>
+        ) : (
+          'Generate Images'
+        )}
       </button>
+
       <button
         onClick={handleFinalizeDrawing}
-        className="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded mb-4"
+        className={`
+          flex items-center justify-center
+          min-w-[150px] h-12
+          bg-green-600 hover:bg-green-700 
+          text-white font-semibold
+          rounded-lg shadow-md
+          transition duration-300 ease-in-out
+          transform hover:scale-105
+          focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-opacity-50
+        `}
       >
         Finalize Drawing
       </button>
-      <button
-        onClick={() => handleImageEditing(imageMask)}
-        className="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded mb-4"
-        disabled={loading}
-      >
-        {loading ? 'Editing...' : 'Edit Images'}
-      </button>
+    </div>
       <div className="flex justify-center gap-6">
           {generatedImages.length === 0 && <p>No images generated.</p>}
           {generatedImages.map((image, index) => (
