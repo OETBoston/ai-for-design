@@ -105,11 +105,9 @@ router.post('/generate-images-stability', async (req, res) => {
     );
 
     if (response.status === 200) {
-      // const fileName = `generated_image_${Date.now()}.jpeg`;
       const fileName = `generated_image_${Date.now()}.jpeg`;
       const imagePath = path.join(__dirname, '..', 'public', fileName);
       
-      // await fs.writeFile(imagePath, Buffer.from(response.data));
       fs.writeFileSync(imagePath, Buffer.from(response.data));
       
       console.log(`Image saved to: ${imagePath}`);
@@ -164,10 +162,13 @@ router.post('/edit-image', async (req, res) => {
     );
 
     if (response.status === 200) {
-      const editedImagePath = './edited_image.jpeg';
-      fs.writeFileSync(editedImagePath, Buffer.from(response.data));
-      console.log(editedImagePath);
-      res.json({ images: '/edited_image.jpeg' });
+      const fileName = `generated_image_${Date.now()}.jpeg`;
+      const imagePath = path.join(__dirname, '..', 'public', fileName);
+      
+      fs.writeFileSync(imagePath, Buffer.from(response.data));
+      
+      console.log(`Image saved to: ${imagePath}`);
+      res.json({ imagePath: `/${fileName}` });
     } else {
       console.error(`Error editing image: ${response.status}: ${response.data.toString()}`);
       res.status(response.status).json({ error: 'Failed to edit image with Stability API' });
