@@ -2,7 +2,7 @@
   "name": "bus-stop-gen",
   "version": "0.1.0",
   "private": true,
-  "homepage": "https://OETBoston.github.io/ai-for-design",
+  "homepage": "/",
   "dependencies": {
     "@emotion/react": "^11.11.4",
     "@emotion/styled": "^11.11.5",
@@ -33,14 +33,17 @@
     "web-vitals": "^2.1.4"
   },
   "scripts": {
-    "predeploy": "npm run build",
-    "deploy": "gh-pages -d build",
-    "start": "react-scripts start",
+    "start": "node backend/server.js",
+    "start-react": "react-scripts start",
     "build": "react-scripts build",
     "test": "react-scripts test",
     "eject": "react-scripts eject",
     "backend": "nodemon backend/server.js",
-    "dev": "concurrently \"npm run start\" \"npm run backend\""
+    "lint": "eslint --no-cache .",
+    "gcp-build": "npm run build"
+  },
+  "engines": {
+    "node": ">=16.0.0"
   },
   "eslintConfig": {
     "extends": [

@@ -1,7 +1,9 @@
 const express = require('express');
 const { OpenAI } = require('openai');
 const cors = require('cors');
+// using env fron root directory
 require('dotenv').config();
+
 const { PredictionServiceClient } = require('@google-cloud/aiplatform').v1;
 const {VertexAI} = require('@google-cloud/vertexai');
 const fs = require('fs');
@@ -9,17 +11,26 @@ const axios = require('axios');
 const FormData = require('form-data');
 const http = require('http');
 const { Readable } = require('stream');
-
+const path = require('path');
 const app = express();
-const port = process.env.PORT || 5000;
+const router = express.Router();
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
 });
 
 app.use(cors());
+
 app.use(express.json());
-app.use(express.static('./'));
+app.use(express.static(path.join(__dirname, '../build')));
+
+// API routes
+app.use('/api', router);
+
+const PORT = process.env.PORT || 8080;
+app.listen(PORT, () => {
+  console.log(`Server listening on port ${PORT}`);
+});
 
 app.post('/generate-images', async (req, res) => {
   const { prompt } = req.body;
@@ -68,7 +79,7 @@ app.post('/generate-images-imagen', async (req, res) => {
   }
 });
 
-app.post('/generate-images-stability', async (req, res) => {
+router.post('/generate-images-stability', async (req, res) => {
   const { prompt } = req.body;
 
   const payload = {
@@ -94,10 +105,15 @@ app.post('/generate-images-stability', async (req, res) => {
     );
 
     if (response.status === 200) {
-      const imagePath = `./generated_image.jpeg`;
+      // const fileName = `generated_image_${Date.now()}.jpeg`;
+      const fileName = `generated_image_${Date.now()}.jpeg`;
+      const imagePath = path.join(__dirname, '..', 'public', fileName);
+      
+      // await fs.writeFile(imagePath, Buffer.from(response.data));
       fs.writeFileSync(imagePath, Buffer.from(response.data));
-      console.log(imagePath);
-      res.json({ images: '/generated_image.jpeg' });
+      
+      console.log(`Image saved to: ${imagePath}`);
+      res.json({ imagePath: `/${fileName}` });
     } else {
       console.error(`Error generating image: ${response.status}: ${response.data.toString()}`);
       res.status(response.status).json({ error: 'Failed to generate image with Stability API' });
@@ -113,7 +129,7 @@ const dataUrlToBuffer = (dataUrl) => {
   return Buffer.from(base64Data, 'base64'); // Convert to buffer
 };
 
-app.post('/edit-image', async (req, res) => {
+router.post('/edit-image', async (req, res) => {
   console.log('Request body:', req.body);
     
   const { sentence, selectedImage, mask } = req.body;
@@ -177,47 +193,8 @@ function base64ToReadStream(base64String) {
   return stream;
 }
 
-app.post('/edit-image', async (req, res) => {
-  console.log('Request body:', req.body); // Log the entire request body
-    
-  const { sentence, selectedImage, mask } = req.body;
-
-  const payload = {
-    image: fetchImageAsReadStream(selectedImage),
-    mask: base64ToReadStream(mask),
-    prompt: sentence,
-    output_format: "jpeg"
-  };
-  console.log(payload)
-  try {    
-    const response = await axios.postForm(
-      'https://api.stability.ai/v2beta/stable-image/edit/inpaint',
-      axios.toFormData(payload, new FormData()),
-      {
-        validateStatus: undefined,
-        responseType: 'arraybuffer',
-        headers: {
-          'Authorization': `Bearer ${process.env.STABILITY_API_KEY}`,
-          'Accept': 'image/*',
-        },
-      }
-    );
-
-    if (response.status === 200) {
-      const editedImagePath = './edited_image.jpeg';
-      fs.writeFileSync(editedImagePath, Buffer.from(response.data));
-      console.log(editedImagePath);
-      res.json({ images: '/edited_image.jpeg' });
-    } else {
-      console.error(`Error editing image: ${response.status}: ${response.data.toString()}`);
-      res.status(response.status).json({ error: 'Failed to edit image with Stability API' });
-    }
-  } catch (error) {
-    console.error('Error editing image with Stability API:', error);
-    res.status(500).json({ error: 'Failed to edit image with Stability API' });
-  }
-});
-
-app.listen(port, () => {
-  console.log(`Server is running on port ${port}`);
+// The "catchall" handler: for any request that doesn't
+// match one above, send back React's index.html file.
+app.get('*', (req, res) => {
+  res.sendFile(path.join(__dirname, '../build/index.html'));
 });

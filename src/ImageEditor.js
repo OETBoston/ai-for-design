@@ -1,5 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import Dropdown from './Dropdown';
+import config from './config';
+
 
 const defaultOptions = {
   word1: ['simple', 'tile', 'carpet'],
@@ -200,11 +202,12 @@ function ImageEditor() {
       if (imageMask && typeof imageMask === 'string') {
         console.log("editing image")
         // Image editing
-        endpoint = 'http://localhost:5000/edit-image';
+        endpoint = `${config.apiUrl}/edit-image`;
+        // endpoint = `${apiUrl}/edit-image`;
         payload = { sentence: prompt, selectedImage, mask: imageMask };
       } else {
         // Image generation
-        endpoint = 'http://localhost:5000/generate-images-stability';
+        endpoint = `${config.apiUrl}/generate-images-stability`;
         payload = { prompt };
       }
   
@@ -218,10 +221,11 @@ function ImageEditor() {
   
       if (response.ok) {
         const data = await response.json();
-        console.log('Response data:', data);
+        console.log('Response data:', data.imagePath);
   
-        // Create a URL for the image
-        const imageUrl = `http://localhost:5000${data.images}?t=${Date.now()}`;
+        // Ensure data.images is a valid URL
+        const imageUrl = typeof data.imagePath === 'string' ? `${config.imgUrl}${data.imagePath}` : '';
+        console.log('Generated image URL:', imageUrl);
         setGeneratedImages([imageUrl]);
   
         if (imageMask) {
@@ -335,7 +339,7 @@ function ImageEditor() {
           value={sentence}
           onChange={(e) => setSentence(e.target.value)}
         />
-        <p>
+        {/* <p>
         {sentence.split(/\s+/).map((word, index) => (
           <span key={index}>
             {word === keywords.word1 && <Dropdown name="word1" options={options.word1} value={keywords.word1} onChange={handleChangeWord} />}
@@ -345,7 +349,7 @@ function ImageEditor() {
             {' '}
           </span>
         ))}                                   
-        </p>
+        </p> */}
       </div>
       <div className="flex space-x-4 mb-6">
       <button
