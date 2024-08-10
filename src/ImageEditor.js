@@ -418,37 +418,65 @@ function ImageEditor() {
       </div>
   
       {/* SidePanel */}
-      <div className="w-80 max-h-screen overflow-y-auto bg-white border-l border-gray-200 shadow-lg p-4">
+      <div
+        className={`fixed top-0 right-0 h-full max-w-xs bg-white border-l border-gray-200 shadow-lg p-4 transition-transform duration-300 ease-in-out ${sidePanelCollapsed ? 'translate-x-full' : 'translate-x-0'}`}
+        style={{ zIndex: 10 }}
+      >
         <div className="flex items-center justify-between mb-4">
-          <h2 className="text-xl font-bold text-blue-600">Past Prompts</h2>
-          <button onClick={() => setSidePanelCollapsed(!sidePanelCollapsed)} className="text-blue-600 hover:text-blue-800 focus:outline-none">
-            {sidePanelCollapsed ? 'Expand' : 'Collapse'}
+          <h2 className={`text-xl font-bold ${sidePanelCollapsed ? 'text-transparent' : 'text-blue-600'}`}>
+            Past Prompts
+          </h2>
+          <button
+            onClick={() => setSidePanelCollapsed(!sidePanelCollapsed)}
+            className="text-blue-600 hover:text-blue-800 focus:outline-none"
+          >
+            {sidePanelCollapsed ? (
+              <svg className="w-6 h-6" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M6 9l6 6 6-6" />
+              </svg>
+            ) : (
+              <svg className="w-6 h-6" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M19 9l-7 7-7-7" />
+              </svg>
+            )}
           </button>
         </div>
-        <ul className={`space-y-2 ${sidePanelCollapsed ? 'hidden' : ''}`}>
-          {pastPrompts.map((prompt, index) => (
-            <li
-              key={index}
-              className="cursor-pointer p-2 rounded-lg hover:bg-gray-200 transition-colors"
-              onClick={() => setSentence(prompt)}
-            >
-              {prompt}
-            </li>
-          ))}
-        </ul>
         {!sidePanelCollapsed && (
-          <div className="mt-4">
-            <h3 className="text-lg font-semibold text-gray-700">Prompt Engineering Guidelines</h3>
-            <p className="mt-2 text-sm text-gray-600">
-              Use clear, concise language. Specify details and constraints to guide the generation process. Experiment with different phrasings to get the best results.
-            </p>
-          </div>
+          <>
+            <ul className="space-y-2">
+              {pastPrompts.map((prompt, index) => (
+                <li
+                  key={index}
+                  className="cursor-pointer p-2 rounded-lg hover:bg-gray-200 transition-colors"
+                  onClick={() => setSentence(prompt)}
+                >
+                  {prompt}
+                </li>
+              ))}
+            </ul>
+            <div className="mt-4">
+              <h3 className="text-lg font-semibold text-gray-700">Prompt Engineering Guidelines</h3>
+              <p className="mt-2 text-sm text-gray-600">
+                Use clear, concise language. Specify details and constraints to guide the generation process. Experiment with different phrasings to get the best results.
+              </p>
+            </div>
+          </>
         )}
       </div>
+
+      {/* Re-expand Button */}
+      {sidePanelCollapsed && (
+        <button
+          onClick={() => setSidePanelCollapsed(false)}
+          className="fixed right-4 top-1/2 transform -translate-y-1/2 bg-blue-600 text-white p-2 rounded-full shadow-md hover:bg-blue-700 focus:outline-none z-20"
+        >
+          <svg className="w-6 h-6" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M19 9l-7 7-7-7" />
+          </svg>
+        </button>
+      )}
     </div>
   );
-  
-
 }
 
 export default ImageEditor;
