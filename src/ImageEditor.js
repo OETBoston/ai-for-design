@@ -42,6 +42,19 @@ function ImageEditor() {
   const canvasRef = useRef(null);
   const [imageMask, setImageMask] = useState(null);
 
+  const [uploadedImages, setUploadedImages] = useState([]);
+
+  const handleImageUpload = (event) => {
+    const file = event.target.files[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setUploadedImages((prevImages) => [...prevImages, reader.result]);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+  
   const handleImageClick = (image) => {
       setSelectedImage(image);
       // setPoints([]);
@@ -393,8 +406,36 @@ function ImageEditor() {
             Finalize Drawing
           </button>
         </div>
-  
-        <div className="flex flex-wrap gap-6">
+        
+        <div className="flex space-x-4">
+          <div className="w-1/4 bg-gray-200 p-4 rounded-lg">
+            <div className="mb-4">
+              <div className="relative cursor-pointer">
+                <img src="/upload-icon.png" alt="Upload Icon" className="upload-icon" onClick={() => document.getElementById('upload-input').click()} />
+                <input
+                  type="file"
+                  id="upload-input"
+                  className="absolute inset-0 opacity-0 cursor-pointer"
+                  onChange={handleImageUpload}
+                />
+              </div>
+              <p className="text-center mt-2 text-gray-600">Upload Reference Image</p>
+            </div>
+            <div className="flex flex-wrap gap-4">
+              {uploadedImages.map((image, index) => (
+                <div
+                  key={index}
+                  className="bg-gray-300 rounded-lg flex items-center justify-center h-32 w-32 overflow-hidden relative"
+                  onClick={() => handleImageClick(image)}
+                >
+                  <img src={image} alt={`Uploaded Image ${index + 1}`} className="object-cover w-full h-full" />
+                </div>
+              ))}
+            </div>
+          </div>
+
+
+        <div className="flex flex-wrap gap-6 mt-4">
           {generatedImages.length === 0 && <p>No images generated.</p>}
           {generatedImages.map((image, index) => (
             <div
@@ -414,6 +455,7 @@ function ImageEditor() {
               )}
             </div>
           ))}
+        </div>
         </div>
       </div>
   

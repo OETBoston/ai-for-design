@@ -15,3 +15,64 @@ code {
   font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
     monospace;
 }
+
+.side-panel-container {
+  position: fixed;
+  right: 0;
+  top: 0;
+  height: 100%;
+  width: 300px;
+  background-color: #f9f9f9;
+  box-shadow: -4px 0 8px rgba(0, 0, 0, 0.1);
+  transition: transform 0.3s ease-in-out;
+  overflow-y: auto;
+}
+
+.side-panel-collapsed {
+  transform: translateX(100%);
+}
+
+.side-panel-content {
+  padding: 16px;
+}
+
+.side-panel-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.side-panel-title {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #333;
+}
+
+.side-panel-toggle {
+  background: none;
+  border: none;
+  font-size: 1.5rem;
+  cursor: pointer;
+  color: #333;
+  transition: color 0.3s;
+}
+
+.side-panel-toggle:hover {
+  color: #007bff;
+}
+
+.side-panel-body {
+  margin-top: 16px;
+}
+
+.side-panel-prompt {
+  margin-bottom: 16px;
+}
+
+.upload-icon {
+  cursor: pointer;
+  width: 48px;
+  height: 48px;
+  display: block;
+  margin: 0 auto;
+}
