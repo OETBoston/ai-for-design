@@ -33,6 +33,8 @@ function ImageEditor() {
   const [options, setOptions] = useState(defaultOptions);
   const [generatedImages, setGeneratedImages] = useState([]); 
   const [loading, setLoading] = useState(false);
+  const [sidePanelCollapsed, setSidePanelCollapsed] = useState(false);
+
 
   const [selectedImage, setSelectedImage] = useState(null);
   const [drawing, setDrawing] = useState(false);
@@ -353,21 +355,22 @@ function ImageEditor() {
   
 
   return (
-    <div className="app-container flex">
-      <div className="flex-1">
-        <div className="bg-white p-4 rounded shadow mb-4">
+    <div className="flex">
+      {/* Main Content */}
+      <div className="flex-1 p-4 space-y-4">
+        <div className="bg-white p-4 rounded-lg shadow-lg">
           <input
             type="text"
-            className="border rounded p-2 w-full mb-4"
+            className="border rounded-lg p-2 w-full mb-4 focus:outline-none focus:ring-2 focus:ring-blue-500"
             value={sentence}
             onChange={(e) => setSentence(e.target.value)}
           />
         </div>
-
+  
         <div className="flex space-x-4 mb-6">
           <button
             onClick={() => handleImageOperation(imageMask)}
-            className={`flex items-center justify-center min-w-[150px] h-12 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg shadow-md transition duration-300 ease-in-out transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50 ${loading ? 'opacity-50 cursor-not-allowed' : ''}`}
+            className="flex items-center justify-center min-w-[150px] h-12 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg shadow-md transition-transform transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50 disabled:opacity-50 disabled:cursor-not-allowed"
             disabled={loading}
           >
             {loading ? (
@@ -382,28 +385,28 @@ function ImageEditor() {
               'Generate Images'
             )}
           </button>
-
+  
           <button
             onClick={handleFinalizeDrawing}
-            className="flex items-center justify-center min-w-[150px] h-12 bg-green-600 hover:bg-green-700 text-white font-semibold rounded-lg shadow-md transition duration-300 ease-in-out transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-opacity-50"
+            className="flex items-center justify-center min-w-[150px] h-12 bg-green-600 hover:bg-green-700 text-white font-semibold rounded-lg shadow-md transition-transform transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-opacity-50"
           >
             Finalize Drawing
           </button>
         </div>
-
+  
         <div className="flex flex-wrap gap-6">
           {generatedImages.length === 0 && <p>No images generated.</p>}
           {generatedImages.map((image, index) => (
             <div
               key={index}
-              className={`bg-gray-300 rounded-lg flex items-center justify-center h-64 w-64 overflow-hidden relative ${selectedImage === image ? 'border-4 border-blue-500' : ''}`}
+              className={`bg-gray-300 rounded-lg flex items-center justify-center h-64 w-64 overflow-hidden relative border-2 ${selectedImage === image ? 'border-blue-500' : 'border-transparent'} transition-all duration-300`}
               onClick={() => handleImageClick(image)}
             >
               <img src={image} alt={`Generated Image ${index + 1}`} className="object-cover w-full h-full" />
               {selectedImage === image && (
                 <canvas
                   ref={canvasRef}
-                  className="absolute top-0 left-0 w-full h-full"
+                  className="absolute top-0 left-0 w-full h-full canvas-overlay"
                   onMouseDown={() => handleMouseDown()}
                   onMouseUp={() => handleMouseUp()}
                   onMouseMove={(e) => handleCanvasDraw(e)}
@@ -413,10 +416,38 @@ function ImageEditor() {
           ))}
         </div>
       </div>
-
-      <SidePanel pastPrompts={pastPrompts} setSentence={setSentence} />
+  
+      {/* SidePanel */}
+      <div className="w-80 max-h-screen overflow-y-auto bg-white border-l border-gray-200 shadow-lg p-4">
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-xl font-bold text-blue-600">Past Prompts</h2>
+          <button onClick={() => setSidePanelCollapsed(!sidePanelCollapsed)} className="text-blue-600 hover:text-blue-800 focus:outline-none">
+            {sidePanelCollapsed ? 'Expand' : 'Collapse'}
+          </button>
+        </div>
+        <ul className={`space-y-2 ${sidePanelCollapsed ? 'hidden' : ''}`}>
+          {pastPrompts.map((prompt, index) => (
+            <li
+              key={index}
+              className="cursor-pointer p-2 rounded-lg hover:bg-gray-200 transition-colors"
+              onClick={() => setSentence(prompt)}
+            >
+              {prompt}
+            </li>
+          ))}
+        </ul>
+        {!sidePanelCollapsed && (
+          <div className="mt-4">
+            <h3 className="text-lg font-semibold text-gray-700">Prompt Engineering Guidelines</h3>
+            <p className="mt-2 text-sm text-gray-600">
+              Use clear, concise language. Specify details and constraints to guide the generation process. Experiment with different phrasings to get the best results.
+            </p>
+          </div>
+        )}
+      </div>
     </div>
   );
+  
 
 }
 
