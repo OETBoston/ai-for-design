@@ -33,10 +33,12 @@ function ImageEditor() {
   const [options, setOptions] = useState(defaultOptions);
   const [generatedImages, setGeneratedImages] = useState([]); 
   const [loading, setLoading] = useState(false);
-  const [sidePanelCollapsed, setSidePanelCollapsed] = useState(false);
+  const [sidePanelCollapsed, setSidePanelCollapsed] = useState(true);
 
 
   const [selectedImage, setSelectedImage] = useState(null);
+  const [referenceImg, setReferenceImage] = useState(null);
+  const [isReferenceImageSet, setIsReferenceImageSet] = useState(false);
   const [drawing, setDrawing] = useState(false);
   const [points, setPoints] = useState([]);   
   const canvasRef = useRef(null);
@@ -52,6 +54,17 @@ function ImageEditor() {
         setUploadedImages((prevImages) => [...prevImages, reader.result]);
       };
       reader.readAsDataURL(file);
+    }
+  };
+  
+  const handleReferenceImageAction = () => {
+    if (!isReferenceImageSet) {
+      setReferenceImage(uploadedImages);
+      setIsReferenceImageSet(true);
+    } else {
+      setReferenceImage(null);
+      setUploadedImages([]);
+      setIsReferenceImageSet(false);
     }
   };
   
@@ -405,6 +418,12 @@ function ImageEditor() {
           >
             Finalize Drawing
           </button>
+          <button
+            onClick={handleReferenceImageAction}
+            className={`flex items-center justify-center min-w-[150px] h-12 ${isReferenceImageSet ? 'bg-red-600 hover:bg-red-700' : 'bg-green-600 hover:bg-green-700'} text-white font-semibold rounded-lg shadow-md transition-transform transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-opacity-50`}
+          >
+            {isReferenceImageSet ? 'Clear Reference' : 'Use Reference'}
+          </button>
         </div>
         
         <div className="flex space-x-4">
@@ -419,7 +438,6 @@ function ImageEditor() {
                   onChange={handleImageUpload}
                 />
               </div>
-              <p className="text-center mt-2 text-gray-600">Upload Reference Image</p>
             </div>
             <div className="flex flex-wrap gap-4">
               {uploadedImages.map((image, index) => (
