@@ -6,7 +6,9 @@ require('dotenv').config();
 
 const { PredictionServiceClient } = require('@google-cloud/aiplatform').v1;
 const {VertexAI} = require('@google-cloud/vertexai');
-const fs = require('fs');
+// const fs = require('fs');
+const fs = require('fs').promises; // Import the promises API of fs
+
 const axios = require('axios');
 const FormData = require('form-data');
 const http = require('http');
@@ -79,8 +81,9 @@ app.post('/generate-images-imagen', async (req, res) => {
   }
 });
 
+
 router.post('/generate-images-stability', async (req, res) => {
-  const { prompt } = req.body;
+  const { prompt, numImages = 2 } = req.body;
 
   const payload = {
     prompt: prompt,
@@ -90,8 +93,9 @@ router.post('/generate-images-stability', async (req, res) => {
     // mode: "text-to-image"
   };
 
-  try {
-    const response = await axios.postForm(
+  // Function to generate an image
+  const generateImage = async () => {
+    return await axios.postForm(
       `https://api.stability.ai/v2beta/stable-image/generate/sd3`,
       axios.toFormData(payload, new FormData()),
       {
@@ -103,24 +107,32 @@ router.post('/generate-images-stability', async (req, res) => {
         },
       }
     );
+  };
 
-    if (response.status === 200) {
-      const fileName = `generated_image_${Date.now()}.jpeg`;
-      const imagePath = path.join(__dirname, '..', 'public', fileName);
-      
-      fs.writeFileSync(imagePath, Buffer.from(response.data));
-      
-      console.log(`Image saved to: ${imagePath}`);
-      res.json({ imagePath: `/${fileName}` });
-    } else {
-      console.error(`Error generating image: ${response.status}: ${response.data.toString()}`);
-      res.status(response.status).json({ error: 'Failed to generate image with Stability API' });
-    }
+  try {
+    // Generate the specified number of images
+    const results = await Promise.allSettled(Array.from({ length: numImages }, generateImage));
+
+    const imagePaths = await Promise.all(results.map(async (result, index) => {
+      if (result.status === 'fulfilled' && result.value.status === 200) {
+        const fileName = `generated_image_${index + 1}_${Date.now()}.jpeg`;
+        const imagePath = path.join(__dirname, '..', 'public', fileName);
+        await fs.writeFile(imagePath, Buffer.from(result.value.data));
+        return `/${fileName}`;
+      } else {
+        console.error(`Error generating image ${index + 1}:`, result.reason || `Status code ${result.value.status}`);
+        return null;
+      }
+    }));
+
+    res.json({ imagePaths: imagePaths });
   } catch (error) {
-    console.error('Error generating image with Stability API:', error);
-    res.status(500).json({ error: 'Failed to generate image with Stability API' });
+    console.error('Error generating images with Stability API:', error);
+    res.status(500).json({ error: 'Failed to generate images with Stability API' });
   }
 });
+
+
 
 const dataUrlToBuffer = (dataUrl) => {
   const base64Data = dataUrl.split(',')[1]; // Get the base64 part

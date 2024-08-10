@@ -221,12 +221,15 @@ function ImageEditor() {
   
       if (response.ok) {
         const data = await response.json();
-        console.log('Response data:', data.imagePath);
-  
-        // Ensure data.images is a valid URL
-        const imageUrl = typeof data.imagePath === 'string' ? `${config.imgUrl}${data.imagePath}` : '';
-        console.log('Generated image URL:', imageUrl);
-        setGeneratedImages([imageUrl]);
+        console.log('Response data:', data.imagePaths);
+      
+        // Ensure data.imagePaths is a valid array of URLs
+        const imageUrls = Array.isArray(data.imagePaths) ? 
+          data.imagePaths.map(path => `${config.imgUrl}${path}`) : [];
+        console.log('Generated image URLs:', imageUrls);
+        
+        // Update the state with the array of image URLs
+        setGeneratedImages(imageUrls);
   
         if (imageMask) {
           // Reset mask-related states
