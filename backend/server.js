@@ -6,8 +6,10 @@ require('dotenv').config();
 
 const { PredictionServiceClient } = require('@google-cloud/aiplatform').v1;
 const {VertexAI} = require('@google-cloud/vertexai');
-// const fs = require('fs');
-const fs = require('fs').promises; // Import the promises API of fs
+
+const fs = require('fs'); // For callback-based and synchronous methods
+const fsPromises = require('fs').promises; // For promise-based methods
+
 
 const axios = require('axios');
 const FormData = require('form-data');
@@ -33,6 +35,34 @@ const PORT = process.env.PORT || 8080;
 app.listen(PORT, () => {
   console.log(`Server listening on port ${PORT}`);
 });
+
+// Download image function
+router.get('/download-image', (req, res) => {
+  const { fileName } = req.query; // Expecting the file name in query parameters
+
+  if (!fileName) {
+    return res.status(400).json({ error: 'File name is required' });
+  }
+
+  const imagePath = path.join(__dirname, '..', 'public', fileName);
+
+  // Check if the file exists
+  fs.access(imagePath, fs.constants.F_OK, (err) => {
+    if (err) {
+      console.error(`File not found: ${fileName}`);
+      return res.status(404).json({ error: 'File not found' });
+    }
+
+    // Send the file as an attachment for download
+    res.download(imagePath, (err) => {
+      if (err) {
+        console.error(`Error downloading file: ${fileName}`, err);
+        return res.status(500).json({ error: 'Failed to download the file' });
+      }
+    });
+  });
+});
+
 
 app.post('/generate-images', async (req, res) => {
   const { prompt } = req.body;
@@ -117,7 +147,7 @@ router.post('/generate-images-stability', async (req, res) => {
       if (result.status === 'fulfilled' && result.value.status === 200) {
         const fileName = `generated_image_${index + 1}_${Date.now()}.jpeg`;
         const imagePath = path.join(__dirname, '..', 'public', fileName);
-        await fs.writeFile(imagePath, Buffer.from(result.value.data));
+        await fsPromises.writeFile(imagePath, Buffer.from(result.value.data));
         return `/${fileName}`;
       } else {
         console.error(`Error generating image ${index + 1}:`, result.reason || `Status code ${result.value.status}`);

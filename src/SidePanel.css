@@ -1,0 +1,29 @@
+.side-panel {
+    width: 300px; 
+    max-height: 100vh; /* Makes the side panel scrollable within the viewport height */
+    overflow-y: auto; /* Enables vertical scrolling */
+    padding: 16px;
+    background-color: #f9f9f9;
+    border-left: 1px solid #ddd;
+  }
+  
+  .prompt-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+  }
+  
+  .prompt-list li {
+    cursor: pointer;
+    padding: 8px;
+    border-bottom: 1px solid #ddd;
+  }
+  
+  .prompt-list li:hover {
+    background-color: #e0e0e0;
+  }
+  
+  .guidelines {
+    margin-top: 16px;
+  }
+  

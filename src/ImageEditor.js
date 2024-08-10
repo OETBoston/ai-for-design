@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import Dropdown from './Dropdown';
 import config from './config';
+import SidePanel from './SidePanel';
 
 
 const defaultOptions = {
@@ -27,6 +28,7 @@ const chooseKeywords = (sentence) => {
 
 function ImageEditor() {
   const [sentence, setSentence] = useState('');
+  const [pastPrompts, setPastPrompts] = useState([]);
   const [keywords, setKeywords] = useState({ word1: '', word2: '', word3: '' });
   const [options, setOptions] = useState(defaultOptions);
   const [generatedImages, setGeneratedImages] = useState([]); 
@@ -42,6 +44,19 @@ function ImageEditor() {
       setSelectedImage(image);
       // setPoints([]);
   };
+
+  // Function to handle adding a new prompt to history
+  const addPromptToHistory = (newPrompt) => {
+    setPastPrompts(prevPrompts => {
+      // Check if the newPrompt already exists to avoid duplicates
+      if (prevPrompts.includes(newPrompt)) {
+        return prevPrompts;
+      }
+      // Add the new prompt to the history
+      return [newPrompt, ...prevPrompts];
+    });
+  };
+
 
   useEffect(() => {
     const newKeywords = chooseKeywords(sentence);
@@ -194,6 +209,10 @@ function ImageEditor() {
 
   const handleImageOperation = async (imageMask = null) => {
     setLoading(true);
+
+    // Add the new prompt to the history
+    addPromptToHistory(sentence);
+
     const prompt = sentence;
   
     try {
@@ -334,72 +353,45 @@ function ImageEditor() {
   
 
   return (
-    <div className="space-y-4">
-      <div className="bg-white p-4 rounded shadow">
-        <input
-          type="text"
-          className="border rounded p-2 w-full mb-4"
-          value={sentence}
-          onChange={(e) => setSentence(e.target.value)}
-        />
-        {/* <p>
-        {sentence.split(/\s+/).map((word, index) => (
-          <span key={index}>
-            {word === keywords.word1 && <Dropdown name="word1" options={options.word1} value={keywords.word1} onChange={handleChangeWord} />}
-            {word === keywords.word2 && <Dropdown name="word2" options={options.word2} value={keywords.word2} onChange={handleChangeWord} />}
-            {word === keywords.word3 && <Dropdown name="word3" options={options.word3} value={keywords.word3} onChange={handleChangeWord} />}
-            {![keywords.word1, keywords.word2, keywords.word3].includes(word) && word}
-            {' '}
-          </span>
-        ))}                                   
-        </p> */}
-      </div>
-      <div className="flex space-x-4 mb-6">
-      <button
-        onClick={() => handleImageOperation(imageMask)}
-        className={`
-          flex items-center justify-center
-          min-w-[150px] h-12
-          bg-blue-600 hover:bg-blue-700 
-          text-white font-semibold
-          rounded-lg shadow-md
-          transition duration-300 ease-in-out
-          transform hover:scale-105
-          focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50
-          ${loading ? 'opacity-50 cursor-not-allowed' : ''}
-        `}
-        disabled={loading}
-      >
-        {loading ? (
-          <>
-            <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-            </svg>
-            Generating...
-          </>
-        ) : (
-          'Generate Images'
-        )}
-      </button>
+    <div className="app-container flex">
+      <div className="flex-1">
+        <div className="bg-white p-4 rounded shadow mb-4">
+          <input
+            type="text"
+            className="border rounded p-2 w-full mb-4"
+            value={sentence}
+            onChange={(e) => setSentence(e.target.value)}
+          />
+        </div>
 
-      <button
-        onClick={handleFinalizeDrawing}
-        className={`
-          flex items-center justify-center
-          min-w-[150px] h-12
-          bg-green-600 hover:bg-green-700 
-          text-white font-semibold
-          rounded-lg shadow-md
-          transition duration-300 ease-in-out
-          transform hover:scale-105
-          focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-opacity-50
-        `}
-      >
-        Finalize Drawing
-      </button>
-    </div>
-      <div className="flex justify-center gap-6">
+        <div className="flex space-x-4 mb-6">
+          <button
+            onClick={() => handleImageOperation(imageMask)}
+            className={`flex items-center justify-center min-w-[150px] h-12 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg shadow-md transition duration-300 ease-in-out transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50 ${loading ? 'opacity-50 cursor-not-allowed' : ''}`}
+            disabled={loading}
+          >
+            {loading ? (
+              <>
+                <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+                Generating...
+              </>
+            ) : (
+              'Generate Images'
+            )}
+          </button>
+
+          <button
+            onClick={handleFinalizeDrawing}
+            className="flex items-center justify-center min-w-[150px] h-12 bg-green-600 hover:bg-green-700 text-white font-semibold rounded-lg shadow-md transition duration-300 ease-in-out transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-opacity-50"
+          >
+            Finalize Drawing
+          </button>
+        </div>
+
+        <div className="flex flex-wrap gap-6">
           {generatedImages.length === 0 && <p>No images generated.</p>}
           {generatedImages.map((image, index) => (
             <div
@@ -409,28 +401,23 @@ function ImageEditor() {
             >
               <img src={image} alt={`Generated Image ${index + 1}`} className="object-cover w-full h-full" />
               {selectedImage === image && (
-                  <canvas
-                      ref={canvasRef}
-                      className="absolute top-0 left-0 w-full h-full"
-                      onMouseDown={() => {
-                          // console.log('Mouse down'); // Debugging log
-                          handleMouseDown();
-                      }}
-                      onMouseUp={() => {
-                          // console.log('Mouse up'); // Debugging log
-                          handleMouseUp();
-                      }}
-                      onMouseMove={(e) => {
-                          // console.log('Mouse move'); // Debugging log
-                          handleCanvasDraw(e);
-                      }}
-                  />
+                <canvas
+                  ref={canvasRef}
+                  className="absolute top-0 left-0 w-full h-full"
+                  onMouseDown={() => handleMouseDown()}
+                  onMouseUp={() => handleMouseUp()}
+                  onMouseMove={(e) => handleCanvasDraw(e)}
+                />
               )}
             </div>
           ))}
+        </div>
       </div>
+
+      <SidePanel pastPrompts={pastPrompts} setSentence={setSentence} />
     </div>
-  );  
+  );
+
 }
 
 export default ImageEditor;
