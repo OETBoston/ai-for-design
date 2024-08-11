@@ -47,35 +47,28 @@ function ImageEditor() {
   const [uploadedImages, setUploadedImages] = useState([]);
 
   const handleImageUpload = (event) => {
-    const file = event.target.files[0];
-    if (file) {
-      const tempUrl = URL.createObjectURL(file);
-      console.log('tempUrl', tempUrl)
-      setUploadedImages((prevImages) => [...prevImages, tempUrl]);
-
-      // // Create FormData to send to the backend
-      // const formData = new FormData();
-      // formData.append('image', file);
-
-      // setReferenceImage(uploadedImages);
-        
-      // const reader = new FileReader();
-      // reader.onloadend = () => {
-      //   setUploadedImages((prevImages) => [...prevImages, reader.result]);
-      // };
-      // reader.readAsDataURL(file);
-    }
+      const file = event.target.files[0];
+      if (file) {
+          const reader = new FileReader();
+          reader.onloadend = () => {
+              const base64String = reader.result;
+              setUploadedImages([base64String]);
+              // console.log(uploadedImages); 
+          };
+          reader.readAsDataURL(file);
+      }
   };
   
   const handleReferenceImageAction = () => {
     if (!isReferenceImageSet) {
-      setReferenceImage(uploadedImages);
+      setReferenceImage(uploadedImages[0]);
       setIsReferenceImageSet(true);
     } else {
       setReferenceImage(null);
       setUploadedImages([]);
       setIsReferenceImageSet(false);
     }
+    console.log(referenceImg);
   };
   
   const handleImageClick = (image) => {

@@ -11,6 +11,8 @@ const bodyParser = require('body-parser');
 const fs = require('fs'); // For callback-based and synchronous methods
 const fsPromises = require('fs').promises; // For promise-based methods
 
+// const Blob = require('blob');
+// global.Blob = Blob;
 
 const axios = require('axios');
 const FormData = require('form-data');
@@ -115,45 +117,68 @@ app.post('/generate-images-imagen', async (req, res) => {
   }
 });
 
+function base64ToBuffer(base64) {
+  // Remove the data URL prefix if it exists
+  const base64Data = base64.replace(/^data:image\/\w+;base64,/, "");
+  return Buffer.from(base64Data, 'base64');
+}
+
+function base64ToBlob(base64) {
+  const parts = base64.split(';base64,');
+  const mimetype = parts[0].split(':')[1];
+  const raw = Buffer.from(parts[1], 'base64');
+  return new Blob([raw], { type: mimetype });
+}
 
 router.post('/generate-images-stability', async (req, res) => {
   const { sentence, numImages = 2, refImg=null } = req.body;
   console.log(sentence);
   console.log(req.body)
-  const payload = {
+  let payload = {
     prompt: sentence,
     output_format: "jpeg",
     // model: "sd3-medium",
     // negative_prompt: "violent objects",
     mode: "text-to-image"
   };
-  if (refImg != null){
-    console.log("using ref")
-    payload = {
-      prompt: sentence,
-      output_format: "jpeg",
-      // model: "sd3-medium",
-      // negative_prompt: "violent objects",
-      image: refImg,
-      mode: "image-to-image"
-    };
+  if (refImg != null) {
+    console.log("using ref");
+    const imageBuffer = base64ToBuffer(refImg);
+    payload.image = imageBuffer;
+    payload.mode = "image-to-image";
+    payload.strength = 0.5;
   }
+  console.log(payload)
   // Function to generate an image
   const generateImage = async () => {
-    return await axios.postForm(
+    const formData = new FormData();
+    for (const [key, value] of Object.entries(payload)) {
+      if (key === 'image') {
+        formData.append(key, value, {
+          filename: 'image.jpg',
+          contentType: value.type,
+        });
+      } else {
+        formData.append(key, value);
+      }
+    }
+  
+    return await axios.post(
       `https://api.stability.ai/v2beta/stable-image/generate/sd3`,
-      axios.toFormData(payload, new FormData()),
+      formData,
       {
         validateStatus: undefined,
         responseType: 'arraybuffer',
         headers: {
+          ...formData.getHeaders(),
           Authorization: `Bearer ${process.env.STABILITY_API_KEY}`,
           Accept: 'image/*',
         },
       }
     );
   };
-
+  
+  
   try {
     // Generate the specified number of images
     const results = await Promise.allSettled(Array.from({ length: numImages }, generateImage));
@@ -165,7 +190,12 @@ router.post('/generate-images-stability', async (req, res) => {
         await fsPromises.writeFile(imagePath, Buffer.from(result.value.data));
         return `/${fileName}`;
       } else {
-        console.error(`Error generating image ${index + 1}:`, result.reason || `Status code ${result.value.status}`);
+        console.error(`Error generating image ${index + 1}:`, result.reason || result.value.data.toString());
+        if (result.status === 'rejected') {
+            console.error(`Error generating image ${index + 1}:`, result.reason?.errors || result.reason);
+        } else {
+            console.error(`Error generating image ${index + 1}: Status code ${result.value.status}`);
+        }
         return null;
       }
     }));
