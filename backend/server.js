@@ -6,6 +6,7 @@ require('dotenv').config();
 
 const { PredictionServiceClient } = require('@google-cloud/aiplatform').v1;
 const {VertexAI} = require('@google-cloud/vertexai');
+const bodyParser = require('body-parser');
 
 const fs = require('fs'); // For callback-based and synchronous methods
 const fsPromises = require('fs').promises; // For promise-based methods
@@ -24,6 +25,9 @@ const openai = new OpenAI({
 });
 
 app.use(cors());
+
+app.use(bodyParser.json({ limit: '50mb' }));
+app.use(bodyParser.urlencoded({ limit: '50mb', extended: true }));
 
 app.use(express.json());
 app.use(express.static(path.join(__dirname, '../build')));
@@ -113,16 +117,27 @@ app.post('/generate-images-imagen', async (req, res) => {
 
 
 router.post('/generate-images-stability', async (req, res) => {
-  const { prompt, numImages = 2 } = req.body;
-
+  const { sentence, numImages = 2, refImg=null } = req.body;
+  console.log(sentence);
+  console.log(req.body)
   const payload = {
-    prompt: prompt,
+    prompt: sentence,
     output_format: "jpeg",
     // model: "sd3-medium",
     // negative_prompt: "violent objects",
-    // mode: "text-to-image"
+    mode: "text-to-image"
   };
-
+  if (refImg != null){
+    console.log("using ref")
+    payload = {
+      prompt: sentence,
+      output_format: "jpeg",
+      // model: "sd3-medium",
+      // negative_prompt: "violent objects",
+      image: refImg,
+      mode: "image-to-image"
+    };
+  }
   // Function to generate an image
   const generateImage = async () => {
     return await axios.postForm(
@@ -210,7 +225,7 @@ router.post('/edit-image', async (req, res) => {
       fs.writeFileSync(imagePath, Buffer.from(response.data));
       
       console.log(`Image saved to: ${imagePath}`);
-      res.json({ imagePath: `/${fileName}` });
+      res.json({ imagePaths: `/${fileName}` });
     } else {
       console.error(`Error editing image: ${response.status}: ${response.data.toString()}`);
       res.status(response.status).json({ error: 'Failed to edit image with Stability API' });

@@ -49,11 +49,21 @@ function ImageEditor() {
   const handleImageUpload = (event) => {
     const file = event.target.files[0];
     if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setUploadedImages((prevImages) => [...prevImages, reader.result]);
-      };
-      reader.readAsDataURL(file);
+      const tempUrl = URL.createObjectURL(file);
+      console.log('tempUrl', tempUrl)
+      setUploadedImages((prevImages) => [...prevImages, tempUrl]);
+
+      // // Create FormData to send to the backend
+      // const formData = new FormData();
+      // formData.append('image', file);
+
+      // setReferenceImage(uploadedImages);
+        
+      // const reader = new FileReader();
+      // reader.onloadend = () => {
+      //   setUploadedImages((prevImages) => [...prevImages, reader.result]);
+      // };
+      // reader.readAsDataURL(file);
     }
   };
   
@@ -245,38 +255,72 @@ function ImageEditor() {
   
     try {
       let endpoint, payload;
-      console.log('imageMask:', imageMask, 'Type:', typeof imageMask);
+      const formData = new FormData();
+      formData.append('sentence', prompt);
+
       if (imageMask && typeof imageMask === 'string') {
         console.log("editing image")
         // Image editing
         endpoint = `${config.apiUrl}/edit-image`;
-        // endpoint = `${apiUrl}/edit-image`;
+        formData.append('selectedImage', selectedImage); 
+        formData.append('mask', imageMask);
         payload = { sentence: prompt, selectedImage, mask: imageMask };
       } else {
         // Image generation
         endpoint = `${config.apiUrl}/generate-images-stability`;
-        payload = { prompt };
+        payload = { sentence: prompt };
+        if (isReferenceImageSet) {
+          // formData.append('refImg', referenceImg);
+          payload.refImg = referenceImg;
+        }
       }
-  
+      console.log(payload)
       const response = await fetch(endpoint, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify(payload),
+        // body: formData,
       });
   
       if (response.ok) {
         const data = await response.json();
+        console.log('Response data:', data);
         console.log('Response data:', data.imagePaths);
-      
-        // Ensure data.imagePaths is a valid array of URLs
-        const imageUrls = Array.isArray(data.imagePaths) ? 
-          data.imagePaths.map(path => `${config.imgUrl}${path}`) : [];
-        console.log('Generated image URLs:', imageUrls);
-        
-        // Update the state with the array of image URLs
-        setGeneratedImages(imageUrls);
+
+        // Check if imagePaths is an array or a single image
+        const imagePaths = data.imagePaths;
+        const imageUrls = Array.isArray(imagePaths) 
+            ? imagePaths.map(path => `${config.imgUrl}${path}`) 
+            : [];
+
+        if (Array.isArray(imagePaths)) {
+            // If it's an array, update the generated images with all new images
+            setGeneratedImages(imageUrls);
+        } else {
+            // If it's a single image, update the selected image and replace it in the array
+            const newImageUrl = imagePaths ? `${config.imgUrl}${imagePaths}` : '';
+            // setSelectedImage(newImageUrl);
+            setGeneratedImages([newImageUrl])
+            // setGeneratedImages(prevImages => {
+            //     // Find the index of the selected image
+            //     const index = prevImages.findIndex(image => image === selectedImage);
+
+            //     if (index === -1) {
+            //         // If the selected image is not found, just return the previous images
+            //         return [...prevImages, newImageUrl]; // Optionally add the new image if it's not in the list
+            //     }
+
+            //     // Create a new array with the selected image replaced
+            //     const updatedImages = [...prevImages];
+            //     console.log(index)
+            //     updatedImages[index] = newImageUrl;
+
+            //     return updatedImages;
+            // });
+        }
+
   
         if (imageMask) {
           // Reset mask-related states
