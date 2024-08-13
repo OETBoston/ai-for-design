@@ -1,18 +1,12 @@
 const express = require('express');
-const { OpenAI } = require('openai');
 const cors = require('cors');
-// using env fron root directory
+// using env from root directory
 require('dotenv').config();
 
-const { PredictionServiceClient } = require('@google-cloud/aiplatform').v1;
-const {VertexAI} = require('@google-cloud/vertexai');
 const bodyParser = require('body-parser');
 
 const fs = require('fs'); // For callback-based and synchronous methods
 const fsPromises = require('fs').promises; // For promise-based methods
-
-// const Blob = require('blob');
-// global.Blob = Blob;
 
 const axios = require('axios');
 const FormData = require('form-data');
@@ -21,10 +15,6 @@ const { Readable } = require('stream');
 const path = require('path');
 const app = express();
 const router = express.Router();
-
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-});
 
 app.use(cors());
 
@@ -69,65 +59,10 @@ router.get('/download-image', (req, res) => {
   });
 });
 
-
-app.post('/generate-images', async (req, res) => {
-  const { prompt } = req.body;
-
-  try {
-    const response = await openai.images.generate({
-      prompt: prompt,
-      n: 4,
-      size: '256x256',
-    });
-
-    const imageUrls = response.data.map(image => image.url);
-    res.json({ images: imageUrls });
-  } catch (error) {
-    console.error('Error generating images:', error);
-    res.status(500).json({ error: 'Failed to generate images' });
-  }
-});
-
-
-const clientOptions = {
-  apiEndpoint: `${process.env.LOCATION}-aiplatform.googleapis.com`,
-};
-
-const predictionServiceClient = new PredictionServiceClient(clientOptions);
-
-app.post('/generate-images-imagen', async (req, res) => {
-  const { prompt, sampleCount } = req.body;
-
-  try {
-    const [response] = await predictionServiceClient.predict({
-      endpoint: `projects/${process.env.PROJECT_ID}/locations/${process.env.LOCATION}/publishers/google/models/${process.env.MODE_VERSION}`,
-      instances: [{ prompt }],
-      parameters: { sampleCount: sampleCount },
-    });
-
-    const generatedImages = response.predictions || [];
-    const imageUrls = generatedImages.map((imageData, idx) => {
-      const imgBytes = Buffer.from(imageData.bytesBase64Encoded, 'base64');
-      return `data:${imageData.mimeType};base64,${imgBytes.toString('base64')}`;
-    });
-    res.json({ images: imageUrls });
-  } catch (error) {
-    console.error('Error generating images with Imagen:', error);
-    res.status(500).json({ error: 'Failed to generate images with Imagen' });
-  }
-});
-
 function base64ToBuffer(base64) {
   // Remove the data URL prefix if it exists
   const base64Data = base64.replace(/^data:image\/\w+;base64,/, "");
   return Buffer.from(base64Data, 'base64');
-}
-
-function base64ToBlob(base64) {
-  const parts = base64.split(';base64,');
-  const mimetype = parts[0].split(':')[1];
-  const raw = Buffer.from(parts[1], 'base64');
-  return new Blob([raw], { type: mimetype });
 }
 
 router.post('/generate-images-stability', async (req, res) => {
@@ -137,8 +72,6 @@ router.post('/generate-images-stability', async (req, res) => {
   let payload = {
     prompt: sentence,
     output_format: "jpeg",
-    // model: "sd3-medium",
-    // negative_prompt: "violent objects",
     mode: "text-to-image"
   };
   if (refImg != null) {
@@ -206,13 +139,6 @@ router.post('/generate-images-stability', async (req, res) => {
     res.status(500).json({ error: 'Failed to generate images with Stability API' });
   }
 });
-
-
-
-const dataUrlToBuffer = (dataUrl) => {
-  const base64Data = dataUrl.split(',')[1]; // Get the base64 part
-  return Buffer.from(base64Data, 'base64'); // Convert to buffer
-};
 
 router.post('/edit-image', async (req, res) => {
   console.log('Request body:', req.body);
