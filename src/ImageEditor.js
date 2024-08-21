@@ -156,7 +156,6 @@ function ImageEditor() {
         endpoint = `${config.apiUrl}/generate-images-stability`;
         payload = { sentence: prompt };
         if (isReferenceImageSet) {
-          // formData.append('refImg', referenceImg);
           payload.refImg = referenceImg;
         }
       }
@@ -184,10 +183,11 @@ function ImageEditor() {
         if (Array.isArray(imagePaths)) {
             // If it's an array, update the generated images with all new images
             setGeneratedImages(imageUrls);
+            addPromptToHistory(sentence, imageUrls);
         } else {
             // If it's a single image, update the selected image and replace it in the array
             const newImageUrl = imagePaths ? `${config.imgUrl}${imagePaths}` : '';
-            // setSelectedImage(newImageUrl);
+            addPromptToHistory(sentence, [newImageUrl]);
             setGeneratedImages([newImageUrl])
         }
 
@@ -207,8 +207,6 @@ function ImageEditor() {
     } finally {
       setLoading(false);
     }
-    // Add the new prompt to the history
-    addPromptToHistory(sentence);
   };
 
   useEffect(() => {
