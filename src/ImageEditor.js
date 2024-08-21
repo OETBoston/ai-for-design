@@ -1,36 +1,10 @@
 import React, { useState, useEffect, useRef } from 'react';
-// import Dropdown from './Dropdown';
 import config from './config';
 // import SidePanel from './SidePanel';
-
-
-const defaultOptions = {
-  word1: ['simple', 'tile', 'carpet'],
-  word2: ['faint', 'bright', 'dim'],
-  word3: ['warm', 'cool', 'neutral'],
-};
-
-const chooseKeywords = (sentence) => {
-  const stopWords = ['a', 'an', 'the', 'and', 'or', 'but', 'in', 'on', 'at', 'to', 'for', 'of', 'with', 'by', 'from', 'up', 'about', 'into', 'over', 'after'];
-  
-  const words = sentence.toLowerCase().match(/\b(\w+)\b/g) || [];
-  
-  const potentialKeywords = words
-      .filter(word => !stopWords.includes(word))
-      .sort((a, b) => b.length - a.length);
-  
-  return {
-      word1: potentialKeywords[0] || '',
-      word2: potentialKeywords[1] || '',
-      word3: potentialKeywords[2] || '',
-  };
-};
 
 function ImageEditor() {
   const [sentence, setSentence] = useState('');
   const [pastPrompts, setPastPrompts] = useState([]);
-  const [keywords, setKeywords] = useState({ word1: '', word2: '', word3: '' });
-  const [options, setOptions] = useState(defaultOptions);
   const [generatedImages, setGeneratedImages] = useState([]); 
   const [loading, setLoading] = useState(false);
   const [sidePanelCollapsed, setSidePanelCollapsed] = useState(true);
@@ -79,8 +53,6 @@ function ImageEditor() {
   const addPromptToHistory = (newPrompt, generatedImages) => {
     setPastPrompts(prevPrompts => {
       // // Add the new prompt and image(s) to the history
-      // return [{ prompt: newPrompt, images: generatedImages }, ...prevPrompts];
-      // Add the new prompt and image(s) to the history
       const newHistory = [{ prompt: newPrompt, images: generatedImages }, ...prevPrompts];
 
       // Save the new prompt history to localStorage
@@ -89,19 +61,7 @@ function ImageEditor() {
       return newHistory;
     });
   };
-  
-
-
-  useEffect(() => {
-    const newKeywords = chooseKeywords(sentence);
-    setKeywords(newKeywords);
-    
-    setOptions({
-      word1: [newKeywords.word1, ...defaultOptions.word1].filter((v, i, a) => a.indexOf(v) === i),
-      word2: [newKeywords.word2, ...defaultOptions.word2].filter((v, i, a) => a.indexOf(v) === i),
-      word3: [newKeywords.word3, ...defaultOptions.word3].filter((v, i, a) => a.indexOf(v) === i),
-    });
-  }, [sentence]);                         
+                       
 
   const handleCanvasDraw = (e) => {
     if (!drawing) return;
@@ -173,7 +133,6 @@ function ImageEditor() {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify(payload),
-        // body: formData,
       });
   
       if (response.ok) {

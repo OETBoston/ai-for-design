@@ -79,7 +79,7 @@ router.post('/generate-images-stability', async (req, res) => {
     const imageBuffer = base64ToBuffer(refImg);
     payload.image = imageBuffer;
     payload.mode = "image-to-image";
-    payload.strength = 0.5;
+    payload.strength = 0.25;
   }
   console.log(payload)
   // Function to generate an image
