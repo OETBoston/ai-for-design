@@ -78,8 +78,15 @@ function ImageEditor() {
 
   const addPromptToHistory = (newPrompt, generatedImages) => {
     setPastPrompts(prevPrompts => {
+      // // Add the new prompt and image(s) to the history
+      // return [{ prompt: newPrompt, images: generatedImages }, ...prevPrompts];
       // Add the new prompt and image(s) to the history
-      return [{ prompt: newPrompt, images: generatedImages }, ...prevPrompts];
+      const newHistory = [{ prompt: newPrompt, images: generatedImages }, ...prevPrompts];
+
+      // Save the new prompt history to localStorage
+      localStorage.setItem('promptHistory', JSON.stringify(newHistory));
+
+      return newHistory;
     });
   };
   
@@ -212,6 +219,14 @@ function ImageEditor() {
   useEffect(() => {
       console.log('Updated points:', points); // This will log the points whenever they change
   }, [points]);
+
+  useEffect(() => {
+    // Load the prompt history from localStorage
+    const storedHistory = localStorage.getItem('promptHistory');
+    if (storedHistory) {
+      setPastPrompts(JSON.parse(storedHistory));
+    }
+  }, []);
 
   const handleFinalizeDrawing = () => {
     const canvas = canvasRef.current;
@@ -373,27 +388,28 @@ function ImageEditor() {
           </div>
 
 
-        <div className="flex flex-wrap gap-6 mt-4">
-          {generatedImages.length === 0 && <p>No images generated.</p>}
-          {generatedImages.map((image, index) => (
-            <div
-              key={index}
-              className={`bg-gray-300 rounded-lg flex items-center justify-center h-64 w-64 overflow-hidden relative border-2 ${selectedImage === image ? 'border-blue-500' : 'border-transparent'} transition-all duration-300`}
-              onClick={() => handleImageClick(image)}
-            >
-              <img src={image} alt={`Generated Image ${index + 1}`} className="object-cover w-full h-full" />
-              {selectedImage === image && (
-                <canvas
-                  ref={canvasRef}
-                  className="absolute top-0 left-0 w-full h-full canvas-overlay"
-                  onMouseDown={() => handleMouseDown()}
-                  onMouseUp={() => handleMouseUp()}
-                  onMouseMove={(e) => handleCanvasDraw(e)}
-                />
-              )}
-            </div>
-          ))}
-        </div>
+          <div className="flex flex-wrap gap-6 mt-4">
+            {generatedImages.length === 0 && <p>No images generated.</p>}
+            {generatedImages.map((image, index) => (
+              <div
+                key={index}
+                className={`bg-gray-300 rounded-lg flex items-center justify-center h-64 w-64 overflow-hidden relative border-2 ${selectedImage === image ? 'border-blue-500' : 'border-transparent'} transition-all duration-300`}
+                onClick={() => handleImageClick(image)}
+              >
+                <img src={image} alt={`Generated Image ${index + 1}`} className="object-cover w-full h-full" />
+                
+                {selectedImage === image && (
+                  <canvas
+                    ref={canvasRef}
+                    className="absolute top-0 left-0 w-full h-full canvas-overlay"
+                    onMouseDown={() => handleMouseDown()}
+                    onMouseUp={() => handleMouseUp()}
+                    onMouseMove={(e) => handleCanvasDraw(e)}
+                  />
+                )}
+              </div>
+            ))}
+          </div>
         </div>
       </div>
   
