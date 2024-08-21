@@ -76,13 +76,13 @@ function ImageEditor() {
       // setPoints([]);
   };
 
-  // Function to handle adding a new prompt to history
-  const addPromptToHistory = (newPrompt) => {
+  const addPromptToHistory = (newPrompt, generatedImages) => {
     setPastPrompts(prevPrompts => {
       // Add the new prompt and image(s) to the history
       return [{ prompt: newPrompt, images: generatedImages }, ...prevPrompts];
     });
   };
+  
 
 
   useEffect(() => {
@@ -136,9 +136,6 @@ function ImageEditor() {
 
   const handleImageOperation = async (imageMask = null) => {
     setLoading(true);
-
-    // Add the new prompt to the history
-    addPromptToHistory(sentence);
 
     const prompt = sentence;
   
@@ -210,6 +207,8 @@ function ImageEditor() {
     } finally {
       setLoading(false);
     }
+    // Add the new prompt to the history
+    addPromptToHistory(sentence);
   };
 
   useEffect(() => {
@@ -438,7 +437,7 @@ function ImageEditor() {
                       <span>{item.prompt}</span>
                     </div>
                     {item.images && item.images.length > 0 && (
-                      <div className="grid grid-cols-3 gap-2 mt-2">
+                      <div className="grid grid-cols-2 gap-2 mt-3">
                         {item.images.map((image, imageIndex) => (
                           <img
                             key={`${index}-${imageIndex}`}
@@ -453,12 +452,6 @@ function ImageEditor() {
                 </li>
               ))}
             </ul>
-            <div className="mt-4">
-              <h3 className="text-lg font-semibold text-gray-700">Prompt Engineering Guidelines</h3>
-              <p className="mt-2 text-sm text-gray-600">
-                Use clear, concise language. Specify details and constraints to guide the generation process. Experiment with different phrasings to get the best results.
-              </p>
-            </div>
           </>
         )}
 
