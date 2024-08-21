@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
-import Dropdown from './Dropdown';
+// import Dropdown from './Dropdown';
 import config from './config';
-import SidePanel from './SidePanel';
+// import SidePanel from './SidePanel';
 
 
 const defaultOptions = {
@@ -79,12 +79,8 @@ function ImageEditor() {
   // Function to handle adding a new prompt to history
   const addPromptToHistory = (newPrompt) => {
     setPastPrompts(prevPrompts => {
-      // Check if the newPrompt already exists to avoid duplicates
-      if (prevPrompts.includes(newPrompt)) {
-        return prevPrompts;
-      }
-      // Add the new prompt to the history
-      return [newPrompt, ...prevPrompts];
+      // Add the new prompt and image(s) to the history
+      return [{ prompt: newPrompt, images: generatedImages }, ...prevPrompts];
     });
   };
 
@@ -99,71 +95,6 @@ function ImageEditor() {
       word3: [newKeywords.word3, ...defaultOptions.word3].filter((v, i, a) => a.indexOf(v) === i),
     });
   }, [sentence]);                         
-
-  const handleChangeWord = (name, value) => {
-    setKeywords(prev => ({ ...prev, [name]: value }));
-    
-    const words = sentence.split(/\s+/);
-    const index = words.findIndex(word => word === keywords[name]);
-    if (index !== -1) {
-      words[index] = value;
-      setSentence(words.join(' '));
-    }
-  };
-
-  const handleGenerateImagesDALLE = async () => {
-    setLoading(true);
-    const prompt = sentence;
-    try {
-      const response = await fetch('http://localhost:5000/generate-images', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ prompt, sampleCount: 4}),
-      });
-
-      const data = await response.json();
-      const images = Array.isArray(data.images) ? data.images : [];
-      setGeneratedImages(images);
-    } catch (error) {
-      console.error('Error generating images:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleGenerateImages = async () => {
-    setLoading(true);
-    const prompt = sentence;
-    try {
-      const response = await fetch('http://localhost:5000/generate-images-stability', {
-      // const response = await fetch('http://localhost:5000/generate-images', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ prompt }),
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        console.log('Response data:', data); // Debugging log
-
-        // Create a URL for the image
-        const imageUrl = `http://localhost:5000${data.images}`;
-        setGeneratedImages([imageUrl]);
-      } else {
-        console.error(`Request failed with status code: ${response.status}`);
-        const errorText = await response.text();
-        console.error(errorText);
-      }
-    } catch (error) {
-      console.error('Error generating images:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const handleCanvasDraw = (e) => {
     if (!drawing) return;
@@ -201,41 +132,6 @@ function ImageEditor() {
   
   const handleMouseUp = () => {
     setDrawing(false);
-  };
-
-  const handleImageEditing = async (imageMask) => {
-    console.log(imageMask)
-    if (typeof imageMask !== 'string') {
-      console.error('Invalid image mask:', imageMask);
-      return; // Exit if imageMask is not valid
-    }
-    try {
-      const response = await fetch('http://localhost:5000/edit-image', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ sentence, selectedImage, mask: imageMask }),
-      });
-      console.log(response)
-      if (response.ok) {
-        const data = await response.json();
-        console.log('Response data:', data); // Debugging log
-
-        // Create a URL for the image
-        const imageUrl = `http://localhost:5000${data.images}`;
-        console.log('Setting generated images:', [imageUrl]);
-        setGeneratedImages([imageUrl]);
-      } else {
-        console.error(`Request failed with status code: ${response.status}`);
-        const errorText = await response.text();
-        console.error(errorText);
-      }
-    } catch (error) {
-      console.error('Error generating images:', error);
-    } finally {
-      setLoading(false);
-    }
   };
 
   const handleImageOperation = async (imageMask = null) => {
@@ -296,22 +192,6 @@ function ImageEditor() {
             const newImageUrl = imagePaths ? `${config.imgUrl}${imagePaths}` : '';
             // setSelectedImage(newImageUrl);
             setGeneratedImages([newImageUrl])
-            // setGeneratedImages(prevImages => {
-            //     // Find the index of the selected image
-            //     const index = prevImages.findIndex(image => image === selectedImage);
-
-            //     if (index === -1) {
-            //         // If the selected image is not found, just return the previous images
-            //         return [...prevImages, newImageUrl]; // Optionally add the new image if it's not in the list
-            //     }
-
-            //     // Create a new array with the selected image replaced
-            //     const updatedImages = [...prevImages];
-            //     console.log(index)
-            //     updatedImages[index] = newImageUrl;
-
-            //     return updatedImages;
-            // });
         }
 
   
@@ -421,6 +301,12 @@ function ImageEditor() {
     <div className="flex">
       {/* Main Content */}
       <div className="flex-1 p-4 space-y-4">
+        <div className="mt-4">
+          <h3 className="text-lg font-semibold text-gray-700">Prompt Engineering Guidelines</h3>
+          <p className="mt-2 text-sm text-gray-600">
+            Use clear, concise language. Specify details and constraints to guide the generation process. Experiment with different phrasings to get the best results.
+          </p>
+        </div>
         <div className="bg-white p-4 rounded-lg shadow-lg">
           <input
             type="text"
@@ -541,13 +427,29 @@ function ImageEditor() {
         {!sidePanelCollapsed && (
           <>
             <ul className="space-y-2">
-              {pastPrompts.map((prompt, index) => (
+              {pastPrompts.map((item, index) => (
                 <li
                   key={index}
                   className="cursor-pointer p-2 rounded-lg hover:bg-gray-200 transition-colors"
-                  onClick={() => setSentence(prompt)}
+                  onClick={() => setSentence(item.prompt)}
                 >
-                  {prompt}
+                  <div>
+                    <div className="flex items-center justify-between">
+                      <span>{item.prompt}</span>
+                    </div>
+                    {item.images && item.images.length > 0 && (
+                      <div className="grid grid-cols-3 gap-2 mt-2">
+                        {item.images.map((image, imageIndex) => (
+                          <img
+                            key={`${index}-${imageIndex}`}
+                            src={image}
+                            alt={`Generated image ${imageIndex}`}
+                            className="w-full h-auto object-cover rounded-md"
+                          />
+                        ))}
+                      </div>
+                    )}
+                  </div>
                 </li>
               ))}
             </ul>
@@ -559,6 +461,7 @@ function ImageEditor() {
             </div>
           </>
         )}
+
       </div>
 
       {/* Re-expand Button */}
