@@ -65,4 +65,4 @@ This project is licensed under the MIT License. See the `LICENSE` file for more 
 
 ## Acknowledgements
 
-This project was developed as part of the Google Summer of Code 2024, in partnership with the City of Boston. Special thanks to the mentors (Michael Evans and Will Jones) and collaborators who provided guidance and support throughout the development process.
+This project was developed as part of the Google Summer of Code 2024, in partnership with the City of Boston. Special thanks to the mentors (Michael Evans and Wil Jones) and collaborators who provided guidance and support throughout the development process.
