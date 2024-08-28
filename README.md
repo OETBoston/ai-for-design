@@ -4,7 +4,7 @@
 
 ## Overview
 
-This project aims to empower communities through culturally-aware urban design and co-creation. Developed during Google Summer of Code 2024 in collaboration with the City of Boston, this open-source web application leverages generative AI to support urban planners in creating more inclusive and culturally sensitive designs.
+This code was developed as part of a Google Summer of Code project to create an urban design platform that empowers citizens to actively participate in the city planning process using generative AI. The platform allows users to generate images of city elements, such as bus stops, city centers, and more, by inputting prompts. Users can further customize the generated designs, either by editing them directly or by incorporating reference images to guide the generation process. All generated images are saved in a history log, enabling citizens to review, select their preferred designs, and share feedback directly with city planners.
 
 ## Features
 
